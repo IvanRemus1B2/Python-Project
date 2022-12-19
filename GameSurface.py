@@ -10,7 +10,11 @@ TEXT_COLOR = (0, 0, 0)
 
 
 class GameSurface:
-    def __init__(self, width, height, game_settings: dict, background_color):
+    def __init__(self, x, y, width, height, game_settings: dict, background_color):
+        # the coordinates relative to the whole screen,useful at the mouse position
+        self.x = x
+        self.y = y
+
         self.width = width
         self.height = height
         self.background_color = background_color
@@ -63,6 +67,8 @@ class GameSurface:
         # the heart image
         self.lives_image = pygame.transform.scale(LIVES_IMAGE, (30, self.info_height))
 
+        self.draw()
+
     def draw_level(self):
         level_text = self.font.render("LEVEL : " + str(self.game.level), True, TEXT_COLOR)
         text_rect = level_text.get_rect()
@@ -100,3 +106,26 @@ class GameSurface:
         self.draw_level()
         self.draw_board()
         self.draw_info()
+
+    def reset(self):
+        self.game.reset_game()
+        self.draw()
+
+    def act(self, mouse_position):
+        mouse_x = mouse_position[0] - self.x
+        mouse_y = mouse_position[1] - self.y
+
+        chosen_line = chosen_column = -1
+        for line in range(self.no_lines):
+            for column in range(self.no_columns):
+                if self.cell_coords[line][column][0] <= mouse_x < (
+                        self.cell_coords[line][column][0] + self.cell_width) and \
+                        self.cell_coords[line][column][1] <= mouse_y < (
+                        self.cell_coords[line][column][1] + self.cell_height):
+                    chosen_line = line
+                    chosen_column = column
+
+        changed = self.game.act(chosen_line, chosen_column)
+
+        if changed:
+            self.draw()

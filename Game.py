@@ -62,7 +62,7 @@ class Game:
 
     def act(self, line, column):
         if self.outside_board(line, column) or self.board[line][column] == -1:
-            return
+            return False
 
         # visit the neighbors of each cell using a queue
         queue = Queue(self.no_lines * self.no_columns)
@@ -136,6 +136,8 @@ class Game:
             self.no_cells_left = self.no_lines * self.no_columns
             self.level += 1
             self.board = Game.generate_board(self.no_lines, self.no_columns, self.level + 1)
+
+        return True
 
     def outside_board(self, line, column):
         return line < 0 or line >= self.no_lines or column < 0 or column >= self.no_columns
