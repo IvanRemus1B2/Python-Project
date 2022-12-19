@@ -12,7 +12,19 @@ COLUMN_VALUES = (0, 1, 0, -1)
 
 
 class Game:
-    def __init__(self, no_lines, no_columns, no_lives):
+    def __init__(self, game_settings):
+
+        if "no_lines" not in game_settings:
+            raise Exception("Number of lines for the board game not specified")
+        elif "no_columns" not in game_settings:
+            raise Exception("Number of columns for the board game not specified")
+        elif "no_lives" not in game_settings:
+            raise Exception("Number of lives for the player in the game not specified")
+
+        no_lines = game_settings["no_lines"]
+        no_columns = game_settings["no_columns"]
+        no_lives = game_settings["no_lives"]
+
         self.no_lines = no_lines
         self.no_columns = no_columns
 

@@ -5,16 +5,21 @@ from pygame.locals import *
 import os
 
 from Button import Button
+from GameSurface import GameSurface
 
 GAME_NAME = "Stones of the Pharaoh"
 
-SCREEN_WIDTH = 800
+SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 800
+
+GAME_WIDTH = 400
+GAME_HEIGHT = 600
 
 WHITE = (255, 255, 255)
 YELLOW = (211, 222, 7)
 AQUA = (255, 87, 51)
 BLACK = (0, 0, 0)
+TANGERINE = (255, 204, 0)
 
 FPS = 60
 
@@ -22,19 +27,31 @@ FPS = 60
 def start_game():
     pygame.init()
 
-    surface1 = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    surface1.fill(YELLOW)
+    # draw surfaces
+    menu_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    # game background image
+    background_image = pygame.image.load(os.path.join("images", "bg_menu.jpg"))
+    background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    menu_surface.blit(background_image, (0, 0))
 
-    surface2 = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    surface2.fill(AQUA)
+    # game window surface which will have the buttons and the game interaction
+    game_window_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    game_window_surface.fill(AQUA)
+
+    # game surface,to include the board,score,lives left and level
+    game_settings = {"no_lines": 10, "no_columns": 10, "no_lives": 3}
+    game = GameSurface(GAME_WIDTH, GAME_HEIGHT, game_settings, TANGERINE)
 
     current_surface = 1
 
     play_button = Button(SCREEN_WIDTH / 2 - 100 / 2, SCREEN_HEIGHT - 50 - 50 / 2, 100, 50, WHITE, "Play", 30, YELLOW)
     back_button = Button(SCREEN_WIDTH - 100, 25, 75, 50, BLACK, "Back", 30, YELLOW)
 
-    play_button.draw(surface1)
-    back_button.draw(surface2)
+    play_button.draw(menu_surface)
+    back_button.draw(game_window_surface)
+
+    game.draw()
+    game_window_surface.blit(game.surface, ((SCREEN_WIDTH - GAME_WIDTH) / 2, 100))
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -44,12 +61,6 @@ def start_game():
     # game icon
     icon = pygame.image.load(os.path.join("images", "icons8-pharaoh-32.png"))
     pygame.display.set_icon(icon)
-
-    # TODO:How to add background image?
-    # game background image
-    # background_image = pygame.image.load(os.path.join("images", "pyramids.png"))
-    # background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    # screen.blit(background_image, (0, 0))
 
     # clock of the game
     clock = pygame.time.Clock()
@@ -77,9 +88,9 @@ def start_game():
                 #     print("Button play was pressed")
 
         if current_surface == 1:
-            screen.blit(surface1, (0, 0))
+            screen.blit(menu_surface, (0, 0))
         elif current_surface == 2:
-            screen.blit(surface2, (0, 0))
+            screen.blit(game_window_surface, (0, 0))
         else:
             raise Exception("Unknown surface")
 
