@@ -1,3 +1,4 @@
+import math
 import os
 
 import pygame
@@ -7,6 +8,9 @@ from Game import Game
 LIVES_IMAGE = pygame.image.load(os.path.join("images", "life.png"))
 
 TEXT_COLOR = (0, 0, 0)
+
+MAX_STEPS_TO_UPDATE_DOWN = 25
+MAX_STEPS_TO_UPDATE_RIGHT = 25
 
 
 class GameSurface:
@@ -47,12 +51,27 @@ class GameSurface:
         self.board_y = self.level_height + (self.board_height % self.no_lines) / 2
 
         # the coords of each cell
-        self.cell_coords = []
+        # the fixed points at which we would draw the cells
+        self.initial_cell_coords = []
         for line in range(self.no_lines):
             line_coords = []
             for column in range(self.no_columns):
                 line_coords.append((self.board_x + column * self.cell_width, self.board_y + line * self.cell_height))
-            self.cell_coords.append(line_coords)
+            self.initial_cell_coords.append(line_coords)
+
+        # the current cell coords,used to allow a more dynamic update of the table
+        self.cell_coords = [[self.initial_cell_coords[line][column] for column in range(self.no_columns)] for line in
+                            range(self.no_lines)]
+
+        # values for the moving animation
+        # if the board is still updating(the cells values are still moving on the board)
+        self.updating_down, self.updating_right = False, False
+
+        # boards after the first deletion,after applying the DOWN rule(where we move each cell downwards as far as possible)
+        # and after the RIGHT rule(move the columns to the right as far as possible)
+        self.after_action_board, self.after_down_board, self.after_right_board = None, None, None
+        # the distance for each cell/columns to move for a step and the limit/as far as it can go in that direction
+        self.down_update_distance, self.right_update_distance, self.down_update_limit, self.right_update_limit = None, None, None, None
 
         # the images for each cell
         self.hieroglyphs = []
@@ -78,7 +97,13 @@ class GameSurface:
 
     def draw_board(self):
         # draw the board
-        board = self.game.board
+        if self.updating_down:
+            board = self.after_action_board
+        elif self.updating_right:
+            board = self.after_down_board
+        else:
+            board = self.game.board
+
         for line in range(self.no_lines):
             for column in range(self.no_columns):
                 x, y = self.cell_coords[line][column]
@@ -107,6 +132,123 @@ class GameSurface:
         self.draw_board()
         self.draw_info()
 
+    def update_coords(self):
+        """
+        Used to update the coordinates of the cells to create the movement of the cells according to the game rules
+        Updates the updating_down and updating_right accordingly
+        On each call,moves one step the cells of the board
+        :return:
+        """
+
+        if self.updating_down:
+            updated = False
+            for line in range(self.no_lines):
+                for column in range(self.no_columns):
+                    x_coord = self.cell_coords[line][column][0]
+                    y_coord = self.cell_coords[line][column][1]
+
+                    y_limit = self.down_update_limit[line][column][1]
+                    # if it can still go down
+                    if y_coord < y_limit:
+                        y_coord = min(y_coord + self.down_update_distance[line][column], y_limit)
+                        self.cell_coords[line][column] = (x_coord, y_coord)
+                        updated = True
+
+            if not updated:
+                self.updating_down = False
+
+                # TODO:Better way to copy the values?
+                for line in range(self.no_lines):
+                    for column in range(self.no_columns):
+                        self.cell_coords[line][column] = self.initial_cell_coords[line][column]
+
+        elif self.updating_right:
+            updated = False
+            for line in range(self.no_lines):
+                for column in range(self.no_columns):
+                    x_coord = self.cell_coords[line][column][0]
+                    y_coord = self.cell_coords[line][column][1]
+
+                    x_limit = self.right_update_limit[column][0]
+                    # if it can still go right
+                    if x_coord < x_limit:
+                        x_coord = min(x_coord + self.right_update_distance[column], x_limit)
+                        self.cell_coords[line][column] = (x_coord, y_coord)
+                        updated = True
+            if not updated:
+                self.updating_right = False
+
+                # TODO:Better way to copy the values?
+                for line in range(self.no_lines):
+                    for column in range(self.no_columns):
+                        self.cell_coords[line][column] = self.initial_cell_coords[line][column]
+        self.draw()
+
+    def compute_parameters(self):
+        """
+        Compute the necessary information to perform the update of the cells
+        :return:
+        """
+        # update variables and values used to move from top to down
+        no_deleted_below = [[0 for column in range(self.no_columns)] for line in range(self.no_lines)]
+
+        # for line in self.initial_cell_coords:
+        #     print(line)
+
+        for line in range(self.no_lines - 2, -1, -1):
+            for column in range(self.no_columns):
+                no_deleted_below[line][column] = (self.after_action_board[line + 1][column] == -1) + \
+                                                 no_deleted_below[line + 1][column]
+        # print("No values below:")
+        # for line in no_deleted_below:
+        #     print(line)
+
+        self.down_update_distance = [[0 for column in range(self.no_columns)] for line in range(self.no_lines)]
+
+        self.down_update_limit = [[(0, 0) for column in range(self.no_columns)] for line in range(self.no_lines)]
+
+        for line in range(self.no_lines - 1, -1, -1):
+            for column in range(self.no_columns):
+                no_values_deleted = no_deleted_below[line][column]
+                no_values_left = self.no_lines - line - 1 - no_values_deleted
+
+                y_distance = no_values_deleted * self.cell_height
+                step_length = int(math.ceil(1.0 * y_distance / MAX_STEPS_TO_UPDATE_DOWN))
+
+                self.down_update_distance[line][column] = step_length
+                self.down_update_limit[line][column] = (self.initial_cell_coords[line][column][0],
+                                                        self.initial_cell_coords[self.no_lines - 1 - no_values_left][
+                                                            column][1])
+
+        # print("Down updates distance below:")
+        # for line in self.down_update_distance:
+        #     print(line)
+        #
+        # print("Update limit:")
+        # for line in self.update_limit:
+        #     print(line)
+
+        # update variables and values to move from left to right
+        no_deleted_right = [0 for column in range(self.no_columns)]
+
+        for column in range(self.no_columns - 2, -1, -1):
+            no_deleted_right[column] = (self.after_down_board[self.no_lines - 1][column + 1] == -1) + no_deleted_right[
+                column + 1]
+
+        self.right_update_distance = [0 for column in range(self.no_lines)]
+
+        self.right_update_limit = [(0, 0) for column in range(self.no_columns)]
+
+        for column in range(self.no_columns):
+            no_values_deleted = no_deleted_right[column]
+            no_values_left = self.no_columns - column - 1 - no_values_deleted
+
+            y_distance = no_values_deleted * self.cell_width
+            step_length = int(math.ceil(1.0 * y_distance / MAX_STEPS_TO_UPDATE_RIGHT))
+
+            self.right_update_distance[column] = step_length
+            self.right_update_limit[column] = (self.initial_cell_coords[0][self.no_columns - 1 - no_values_left][0], -1)
+
     def reset(self):
         self.game.reset_game()
         self.draw()
@@ -118,14 +260,18 @@ class GameSurface:
         chosen_line = chosen_column = -1
         for line in range(self.no_lines):
             for column in range(self.no_columns):
-                if self.cell_coords[line][column][0] <= mouse_x < (
-                        self.cell_coords[line][column][0] + self.cell_width) and \
-                        self.cell_coords[line][column][1] <= mouse_y < (
-                        self.cell_coords[line][column][1] + self.cell_height):
+                if self.initial_cell_coords[line][column][0] <= mouse_x < (
+                        self.initial_cell_coords[line][column][0] + self.cell_width) and \
+                        self.initial_cell_coords[line][column][1] <= mouse_y < (
+                        self.initial_cell_coords[line][column][1] + self.cell_height):
                     chosen_line = line
                     chosen_column = column
 
-        changed = self.game.act(chosen_line, chosen_column)
+        changed, self.after_action_board, self.after_down_board, self.after_right_board = self.game.act(chosen_line,
+                                                                                                        chosen_column)
 
         if changed:
+            # start the moving of the cells accordingly
+            self.updating_down, self.updating_right = True, True
+            self.compute_parameters()
             self.draw()

@@ -2,7 +2,7 @@ import random
 
 from queue import Queue
 
-MAX_LEVEL = 5
+MAX_LEVEL = 6
 BLOCK_VALUE = 1
 
 # the neighbors for a given cell in the board
@@ -62,7 +62,7 @@ class Game:
 
     def act(self, line, column):
         if self.outside_board(line, column) or self.board[line][column] == -1:
-            return False
+            return False, None, None, None
 
         # visit the neighbors of each cell using a queue
         queue = Queue(self.no_lines * self.no_columns)
@@ -92,6 +92,9 @@ class Game:
 
         # update board after we removed at least one block
 
+        after_action_board = [[self.board[line][column] for column in range(self.no_columns)] for line in
+                              range(self.no_lines)]
+
         # update board from top to bottom
 
         for column in range(self.no_columns):
@@ -108,6 +111,9 @@ class Game:
             for index in range(self.no_lines):
                 self.board[self.no_lines - index - 1][column] = values[index]
 
+        after_down_board = [[self.board[line][column] for column in range(self.no_columns)] for line in
+                            range(self.no_lines)]
+
         # update board from left to right
 
         last_line = self.no_lines - 1
@@ -123,6 +129,9 @@ class Game:
             else:
                 column -= 1
 
+        after_right_board = [[self.board[line][column] for column in range(self.no_columns)] for line in
+                             range(self.no_lines)]
+
         # update game info
 
         self.score += no_visited_cells * self.level * BLOCK_VALUE
@@ -137,7 +146,7 @@ class Game:
             self.level += 1
             self.board = Game.generate_board(self.no_lines, self.no_columns, self.level + 1)
 
-        return True
+        return True, after_action_board, after_down_board, after_right_board
 
     def outside_board(self, line, column):
         return line < 0 or line >= self.no_lines or column < 0 or column >= self.no_columns

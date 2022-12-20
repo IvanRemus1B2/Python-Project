@@ -92,10 +92,17 @@ def start_game():
                     pressed_back_button = back_button.pressed(mouse_position)
                     if pressed_back_button:
                         current_surface = 3 - current_surface
-                    else:
+                    elif not game.updating_down and not game.updating_right:
+                        # if the game cells are still moving,don't update anything
                         # no buttons pressed,check for a click on the cells of the board
                         game.act(mouse_position)
                         game_window_surface.blit(game.surface, (GAME_X, GAME_Y))
+
+        # if the game still have moving cells,continue updating it
+        if game.updating_down or game.updating_right:
+            game.update_coords()
+            game_window_surface.blit(game.surface, (GAME_X, GAME_Y))
+
         if current_surface == 1:
             screen.blit(menu_surface, (0, 0))
         elif current_surface == 2:
