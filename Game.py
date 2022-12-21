@@ -58,11 +58,20 @@ class Game:
         return board
 
     def game_over(self):
-        return self.level == MAX_LEVEL or self.no_lives_left <= 0
+        return self.level >= MAX_LEVEL or self.no_lives_left <= 0
 
-    def act(self, line, column):
+    def get_deletion_result(self, line, column):
         if self.outside_board(line, column) or self.board[line][column] == -1:
-            return False, None, None, None
+            return 0, [[False for column in range(self.no_columns)] for line in range(self.no_lines)]
+
+        """
+        Get the number of cells deleted if we we're to press there,as well as which cells
+        we're deleted
+        Only done as a simulation,doesn't change the board values
+        :param line:
+        :param column:
+        :return:
+        """
 
         # visit the neighbors of each cell using a queue
         queue = Queue(self.no_lines * self.no_columns)
@@ -79,7 +88,6 @@ class Game:
             if not visited[current_line][current_column]:
 
                 visited[current_line][current_column] = True
-                self.board[current_line][current_column] = -1
 
                 no_visited_cells += 1
 
@@ -87,8 +95,23 @@ class Game:
                     new_line = current_line + LINE_VALUES[index]
                     new_column = current_column + COLUMN_VALUES[index]
 
-                    if not self.outside_board(new_line, new_column) and self.board[new_line][new_column] == cell_type:
+                    if not self.outside_board(new_line, new_column) and self.board[new_line][new_column] == cell_type \
+                            and not visited[new_line][new_column]:
                         queue.put((new_line, new_column))
+
+        return no_visited_cells, visited
+
+    def act(self, line, column):
+        if self.outside_board(line, column) or self.board[line][column] == -1:
+            return False, None, None, None
+
+        # delete the cells
+        no_visited_cells, visited = self.get_deletion_result(line, column)
+
+        for new_line in range(self.no_lines):
+            for new_column in range(self.no_columns):
+                if visited[new_line][new_column]:
+                    self.board[new_line][new_column] = -1
 
         # update board after we removed at least one block
 

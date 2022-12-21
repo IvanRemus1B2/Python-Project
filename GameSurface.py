@@ -12,6 +12,9 @@ TEXT_COLOR = (0, 0, 0)
 MAX_STEPS_TO_UPDATE_DOWN = 25
 MAX_STEPS_TO_UPDATE_RIGHT = 25
 
+HIGHLIGHTED_COLOR = (224, 236, 255)
+LINE_THICKNESS = 2
+
 
 class GameSurface:
     def __init__(self, x, y, width, height, game_settings: dict, background_color):
@@ -73,6 +76,9 @@ class GameSurface:
         # the distance for each cell/columns to move for a step and the limit/as far as it can go in that direction
         self.down_update_distance, self.right_update_distance, self.down_update_limit, self.right_update_limit = None, None, None, None
 
+        # used for the animation where it shows all the possible deleted cells
+        self.highlighted_cells = [[False for column in range(self.no_columns)] for line in range(self.no_lines)]
+
         # the images for each cell
         self.hieroglyphs = []
         for index in range(6):
@@ -110,6 +116,11 @@ class GameSurface:
                 value = board[line][column]
                 if value != -1:
                     self.surface.blit(self.hieroglyphs[value], (x, y))
+
+                    # if we aren't moving the cells and this cell is currently highlighted,do so
+                    if not self.updating_down and not self.updating_right and self.highlighted_cells[line][column]:
+                        pygame.draw.rect(self.surface, HIGHLIGHTED_COLOR, [x, y, self.cell_width, self.cell_height],
+                                         LINE_THICKNESS)
 
     def draw_info(self):
         x = 0
@@ -250,10 +261,19 @@ class GameSurface:
             self.right_update_limit[column] = (self.initial_cell_coords[0][self.no_columns - 1 - no_values_left][0], -1)
 
     def reset(self):
+        self.highlighted_cells = [[False for column in range(self.no_columns)] for line in range(self.no_lines)]
+        self.updating_down = self.updating_right = False
+
+        # TODO:Shorter way to copy values to the other matrix without 2 for loops
+        #  Did it this way to avoid the using the reference
+        for line in range(self.no_lines):
+            for column in range(self.no_columns):
+                self.cell_coords[line][column] = (self.initial_cell_coords[line][column][0], self.initial_cell_coords[line][column][1])
+
         self.game.reset_game()
         self.draw()
 
-    def act(self, mouse_position):
+    def compute_board_position(self, mouse_position):
         mouse_x = mouse_position[0] - self.x
         mouse_y = mouse_position[1] - self.y
 
@@ -267,11 +287,30 @@ class GameSurface:
                     chosen_line = line
                     chosen_column = column
 
+        return chosen_line, chosen_column
+
+    def highlight_possible_deleted_cells(self, mouse_position):
+        chosen_line, chosen_column = self.compute_board_position(mouse_position)
+
+        no_visited_cells, self.highlighted_cells = self.game.get_deletion_result(chosen_line, chosen_column)
+
+        self.draw()
+
+        self.highlighted_cells = [[False for column in range(self.no_columns)] for line in range(self.no_lines)]
+
+    def act(self, mouse_position):
+        chosen_line, chosen_column = self.compute_board_position(mouse_position)
+
         changed, self.after_action_board, self.after_down_board, self.after_right_board = self.game.act(chosen_line,
                                                                                                         chosen_column)
-
         if changed:
             # start the moving of the cells accordingly
             self.updating_down, self.updating_right = True, True
             self.compute_parameters()
             self.draw()
+
+    def game_over(self):
+        return self.game.game_over()
+
+    def get_score(self):
+        return self.game.score
