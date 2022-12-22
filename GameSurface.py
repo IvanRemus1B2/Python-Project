@@ -134,7 +134,8 @@ class GameSurface:
         y_coord = self.initial_cell_coords[self.no_lines - 1][0][1] + self.cell_height
         pygame.draw.line(self.surface, (0, 0, 0),
                          (self.initial_cell_coords[self.no_lines - 1][0][0], y_coord),
-                         (self.initial_cell_coords[self.no_lines - 1][self.no_columns - 1][0], y_coord))
+                         (self.initial_cell_coords[self.no_lines - 1][self.no_columns - 1][0] + self.cell_width,
+                          y_coord))
 
         # draw info
         x = 0
