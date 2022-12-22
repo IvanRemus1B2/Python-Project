@@ -101,6 +101,12 @@ class GameSurface:
 
         self.surface.blit(level_text, text_rect)
 
+        # separator
+        start_position = self.initial_cell_coords[0][0]
+        end_position = (self.initial_cell_coords[0][self.no_columns - 1][0] + self.cell_width, \
+                        self.initial_cell_coords[0][self.no_columns - 1][1])
+        pygame.draw.line(self.surface, (0, 0, 0), start_position, end_position)
+
     def draw_board(self):
         # draw the board
         if self.updating_down:
@@ -123,6 +129,14 @@ class GameSurface:
                                          LINE_THICKNESS)
 
     def draw_info(self):
+
+        # draw separator
+        y_coord = self.initial_cell_coords[self.no_lines - 1][0][1] + self.cell_height
+        pygame.draw.line(self.surface, (0, 0, 0),
+                         (self.initial_cell_coords[self.no_lines - 1][0][0], y_coord),
+                         (self.initial_cell_coords[self.no_lines - 1][self.no_columns - 1][0], y_coord))
+
+        # draw info
         x = 0
         y = self.level_height + self.board_height
 
@@ -268,7 +282,8 @@ class GameSurface:
         #  Did it this way to avoid the using the reference
         for line in range(self.no_lines):
             for column in range(self.no_columns):
-                self.cell_coords[line][column] = (self.initial_cell_coords[line][column][0], self.initial_cell_coords[line][column][1])
+                self.cell_coords[line][column] = (
+                    self.initial_cell_coords[line][column][0], self.initial_cell_coords[line][column][1])
 
         self.game.reset_game()
         self.draw()

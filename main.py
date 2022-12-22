@@ -34,6 +34,7 @@ AQUA = (255, 87, 51)
 BLACK = (0, 0, 0)
 TANGERINE = (255, 204, 0)
 ORANGE = (255, 128, 0)
+DARKER_ORANGE = (204, 102, 0)
 
 FPS = 60
 
@@ -91,6 +92,27 @@ def parse_arguments():
     return game_settings
 
 
+def draw_text(surface, position, text, font_size, text_color):
+    # draw shadow
+    font = pygame.font.SysFont("Arial", font_size)
+    shadow_text = font.render(text, True, BLACK)
+    width, height = shadow_text.get_size()
+    shadow_rect = shadow_text.get_rect()
+    offset = (-3, -3)
+    shadow_rect.center = (position[0] + width / 2 + offset[0], position[1] + height / 2 + offset[1])
+    surface.blit(shadow_text, shadow_rect)
+
+    font = pygame.font.SysFont("Arial", font_size)
+    drawing_text = font.render(text, True, text_color)
+
+    width, height = drawing_text.get_size()
+
+    text_rect = drawing_text.get_rect()
+    text_rect.center = (position[0] + width / 2, position[1] + height / 2)
+
+    surface.blit(drawing_text, text_rect)
+
+
 def start_game():
     pygame.init()
 
@@ -100,10 +122,12 @@ def start_game():
     background_image = pygame.image.load(os.path.join("images", "bg_menu.jpg"))
     background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
     menu_surface.blit(background_image, (0, 0))
+    draw_text(menu_surface, (SCREEN_WIDTH / 2 - 150, 275), "The stones", 60, YELLOW)
+    draw_text(menu_surface, (SCREEN_WIDTH / 2 - 180, 375), "of the Pharaoh", 60, YELLOW)
 
     # game window surface which will have the buttons and the game interaction
     game_window_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
-    game_window_surface.fill(AQUA)
+    game_window_surface.blit(background_image, (0, 0))
 
     # game surface,to include the board,score,lives left and level
     game_settings = parse_arguments()
@@ -114,8 +138,10 @@ def start_game():
 
     current_surface = 1
 
-    play_button = Button(SCREEN_WIDTH / 2 - 100 / 2, SCREEN_HEIGHT - 50 - 50 / 2, 100, 50, ORANGE, "Play", 30, WHITE)
-    back_button = Button(SCREEN_WIDTH - 100, 25, 75, 50, ORANGE, "Back", 30, WHITE)
+    play_button = Button(SCREEN_WIDTH / 2 - 150 / 2, SCREEN_HEIGHT - 50 - 50 // 2, 150, 50, ORANGE, "Play", 40, WHITE,
+                         True, DARKER_ORANGE, 2)
+    back_button = Button(SCREEN_WIDTH - 100, 25, 75, 50, ORANGE, "Back", 30, WHITE,
+                         True, DARKER_ORANGE, 2)
 
     play_button.draw(menu_surface)
     back_button.draw(game_window_surface)
