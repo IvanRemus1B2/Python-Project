@@ -9,6 +9,8 @@ from Button import Button
 from GameSurface import GameSurface
 from InformativeMessageSurface import InformativeMessageSurface
 
+import sys
+
 GAME_NAME = "Stones of the Pharaoh"
 
 SCREEN_WIDTH = 600
@@ -35,6 +37,59 @@ ORANGE = (255, 128, 0)
 
 FPS = 60
 
+DEFAULT_NO_LINES = 10
+DEFAULT_NO_COLUMNS = 10
+DEFAULT_NO_LIVES = 3
+DEFAULT_START_LEVEL = 1
+
+
+def parse_arguments():
+    parameters = sys.argv[1:]
+    no_parameters = len(parameters)
+
+    game_settings = dict()
+    game_settings["no_lines"] = DEFAULT_NO_LINES
+    game_settings["no_columns"] = DEFAULT_NO_COLUMNS
+    game_settings["no_lives"] = DEFAULT_NO_LIVES
+    game_settings["start_level"] = DEFAULT_START_LEVEL
+
+    if no_parameters == 1:
+        start_level = int(parameters[0])
+        if start_level < 1 or start_level >= Game.MAX_LEVEL:
+            raise ValueError(
+                "The argument representing the start level has to be an integer value between 1 and " + str(
+                    Game.MAX_LEVEL - 1) + " inclusive")
+        game_settings["start_level"] = start_level
+    elif 1 < no_parameters <= 4:
+        no_lines = int(parameters[0])
+        if no_lines < 1:
+            raise ValueError("The number of lines specified as the first argument has to be a positive integer")
+
+        no_columns = int(parameters[1])
+        if no_columns < 1:
+            raise ValueError("The number of columns specified as the first argument has to be a positive integer")
+
+        game_settings["no_lines"] = no_lines
+        game_settings["no_columns"] = no_columns
+
+        if no_parameters >= 3:
+            no_lives = int(parameters[2])
+            if no_lives < 1:
+                raise ValueError("The number of lives specified as the third argument has to be a positive integer")
+            game_settings["no_lives"] = no_lives
+
+        if no_parameters >= 4:
+            start_level = int(parameters[3])
+            if start_level < 1 or start_level >= Game.MAX_LEVEL:
+                raise ValueError(
+                    "The argument representing the start level as the forth argument has to be an integer value between 1 and " + str(
+                        Game.MAX_LEVEL - 1) + " inclusive")
+            game_settings["start_level"] = start_level
+    elif no_parameters > 4:
+        raise Exception(
+            "Invalid number of arguments!At most 4 allowed.Format: no_lines,no_columns,no_lives,start_level")
+    return game_settings
+
 
 def start_game():
     pygame.init()
@@ -51,7 +106,7 @@ def start_game():
     game_window_surface.fill(AQUA)
 
     # game surface,to include the board,score,lives left and level
-    game_settings = {"no_lines": 10, "no_columns": 10, "no_lives": 3}
+    game_settings = parse_arguments()
     game = GameSurface(GAME_X, GAME_Y, GAME_WIDTH, GAME_HEIGHT, game_settings, TANGERINE)
 
     # game_over object to get the surface required

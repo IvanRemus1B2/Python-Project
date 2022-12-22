@@ -20,15 +20,19 @@ class Game:
             raise Exception("Number of columns for the board game not specified")
         elif "no_lives" not in game_settings:
             raise Exception("Number of lives for the player in the game not specified")
+        elif "start_level" not in game_settings:
+            raise Exception("Starting level for the player in the game not specified")
 
         no_lines = game_settings["no_lines"]
         no_columns = game_settings["no_columns"]
         no_lives = game_settings["no_lives"]
+        start_level = game_settings["start_level"]
 
         self.no_lines = no_lines
         self.no_columns = no_columns
+        self.start_level = start_level
 
-        self.level = 1
+        self.level = start_level
         self.score = 0
         self.no_lives = no_lives
 
@@ -176,7 +180,7 @@ class Game:
 
     def reset_game(self):
         self.no_cells_left = self.no_lines * self.no_columns
-        self.level = 1
+        self.level = self.start_level
         self.score = 0
         self.no_lives_left = self.no_lives
 
