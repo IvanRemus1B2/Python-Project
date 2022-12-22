@@ -143,8 +143,13 @@ def start_game():
     back_button = Button(SCREEN_WIDTH - 100, 25, 75, 50, ORANGE, "Back", 30, WHITE,
                          True, DARKER_ORANGE, 2)
 
+    stop_animation = Button(25, 25, 275, 50, ORANGE, "Stop/Start animation", 30, WHITE,
+                            True, DARKER_ORANGE, 2)
+
     play_button.draw(menu_surface)
+
     back_button.draw(game_window_surface)
+    stop_animation.draw(game_window_surface)
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
@@ -181,28 +186,32 @@ def start_game():
                         current_surface = 3 - current_surface
                 elif current_surface == 2:
                     # at the game
+                    pressed_stop_animation_button = stop_animation.pressed(mouse_position)
                     pressed_back_button = back_button.pressed(mouse_position)
                     if pressed_back_button:
                         current_surface = 3 - current_surface
-                    elif not game.updating_down and not game.updating_right:
-                        # if the game cells are still moving,don't update anything
-                        # no buttons pressed,check for a click on the cells of the board
-                        game.act(mouse_position)
-                        game_window_surface.blit(game.surface, (GAME_X, GAME_Y))
-                        if game.game_over():
-                            current_surface = 3
+                    else:
+                        if pressed_stop_animation_button:
+                            game.stop_animation = (not game.stop_animation)
+                        if not game.updating_down and not game.updating_right:
+                            # if the game cells are still moving,don't update anything
+                            # no buttons pressed,check for a click on the cells of the board
+                            game.act(mouse_position)
+                            game_window_surface.blit(game.surface, (GAME_X, GAME_Y))
+                            if game.game_over():
+                                current_surface = 3
 
-                            # update the game over surface
-                            game_over_surface.reset()
-                            game_over_surface.write_text("GAME OVER", 50, WHITE)
-                            game_over_surface.write_text("Final score : " + str(game.get_score()), 30, WHITE)
+                                # update the game over surface
+                                game_over_surface.reset()
+                                game_over_surface.write_text("GAME OVER", 50, WHITE)
+                                game_over_surface.write_text("Final score : " + str(game.get_score()), 30, WHITE)
 
-                            # encouraging message
-                            text = "Keep it up!"
-                            level = game.game.level
-                            if level >= Game.MAX_LEVEL:
-                                text = "Good job!You got them all!"
-                            game_over_surface.write_text(text, 30, WHITE)
+                                # encouraging message
+                                text = "Keep it up!"
+                                level = game.game.level
+                                if level >= Game.MAX_LEVEL:
+                                    text = "Good job!You got them all!"
+                                game_over_surface.write_text(text, 30, WHITE)
 
                 elif current_surface == 3:
                     current_surface = 1

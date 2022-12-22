@@ -79,6 +79,9 @@ class GameSurface:
         # used for the animation where it shows all the possible deleted cells
         self.highlighted_cells = [[False for column in range(self.no_columns)] for line in range(self.no_lines)]
 
+        # for stopping animation
+        self.stop_animation = False
+
         # the images for each cell
         self.hieroglyphs = []
         for index in range(6):
@@ -109,10 +112,13 @@ class GameSurface:
 
     def draw_board(self):
         # draw the board
-        if self.updating_down:
-            board = self.after_action_board
-        elif self.updating_right:
-            board = self.after_down_board
+        if not self.stop_animation:
+            if self.updating_down:
+                board = self.after_action_board
+            elif self.updating_right:
+                board = self.after_down_board
+            else:
+                board = self.game.board
         else:
             board = self.game.board
 
@@ -319,10 +325,12 @@ class GameSurface:
 
         changed, self.after_action_board, self.after_down_board, self.after_right_board = self.game.act(chosen_line,
                                                                                                         chosen_column)
-        if changed:
+        if changed and not self.stop_animation:
             # start the moving of the cells accordingly
             self.updating_down, self.updating_right = True, True
             self.compute_parameters()
+            self.draw()
+        elif changed:
             self.draw()
 
     def game_over(self):
